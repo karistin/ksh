@@ -4,7 +4,7 @@ import signal
 import sys
 import curses
 
-'''
+"""
 1. local var 
 2. export err (re)
 err case 
@@ -12,7 +12,7 @@ err case
 3. local var tests
 4. stream : 시간에 흐름에 따라 이용가능한 데이터 원소의 수열 
 (과거나 마래의 데이터를 읽지 못한다.)
-'''
+"""
 local_dict={}
 
 def get_env(cmd):

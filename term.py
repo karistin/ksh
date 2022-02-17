@@ -41,11 +41,14 @@ def set_mode():
     # blocking read
     # Minbyte 가 입력될때 까지 계속 진행
     try:
-        # tty.setraw(fd)
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
         ch = sys.stdin.read(1)
         if ch == '\x1b':
             ch = timeout_mode(new, fd)
+        if len(ch) == 1:  # ch가 하나일때만
+            if ord(ch) == 127:
+                sys.stdout.write(u'\u001b[1D')
+                sys.stdout.write(u'\u001b[1P')
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
     return ch
@@ -59,6 +62,9 @@ def get_ch():
 
 
 if __name__ == "__main__":
-    # for i in range(20):
     while(True):
         get_ch()
+'''
+아스키 스페셜 키 작동 금지
+오른쪽 화살표 작동 금지 시키기
+'''

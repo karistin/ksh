@@ -105,7 +105,7 @@ def main():
         if arg[0] == "$":
             # print(arg)
             if os.getenv(arg[1:]):
-                args[args.index(arg)] = os.environ[arg[1:]]  # 환경 변수에서 찾기
+                args[args.index(arg)] = os.environ[arg[1:]]     # 환경 변수에서 찾기
             elif local_dict.get(arg[1:]):
                 args[args.index(arg)] = local_dict[arg[1:]]
     if len(words) == 2:

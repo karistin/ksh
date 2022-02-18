@@ -48,7 +48,7 @@ def set_mode():
             ch = timeout_mode(new, fd)
         if len(ch) == 1:  # ch가 하나일때만
             # if ch.encode() == b'01111111':
-            if ord(ch) == 127:
+            if ch == b'\x7f':
                 sys.stdout.write(u'\u001b[1D\u001b[1P')
                 sys.stdout.flush()
     finally:

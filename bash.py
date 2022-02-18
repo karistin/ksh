@@ -89,14 +89,14 @@ def print_set():
 
 def extra_cmd(key, args, cmds):
     cmd = {
-        "cd" : lambda:changedir(args),
-        "export" : lambda:export_var(cmds, args),
-        "unset" : lambda:unset(args),
-        "local" : lambda:local_var(cmds),
-        "set" : lambda:print_set()
+        'cd': lambda: changedir(args),
+        'export': lambda: export_var(cmds, args),
+        'unset': lambda: unset(args),
+        'local': lambda: local_var(cmds),
+        'set': lambda: print_set()
     }
-    cmd_func = cmd.get(key, "default")    
-    if isinstance(cmd_func, types.LambdaType):
+    cmd_func = cmd.get(key)
+    if cmd_func is not None:
         cmd_func()
         return True
     else:

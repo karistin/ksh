@@ -43,8 +43,7 @@ def set_mode():
     try:
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
         ch = sys.stdin.read(1)
-        # print(types(ch))
-        if ch == '\x1b':
+        if ch == '\x1b':  # ascii 127
             ch = timeout_mode(new, fd)
         if len(ch) == 1:  # ch가 하나일때만
             if ch == b'\x7f':

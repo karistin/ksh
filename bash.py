@@ -27,9 +27,9 @@ def get_env(cmd):
 
 def changedir(args):
     if len(args) == 1:
-        os.chdir("/home/ksj")
-    elif args[1] == "..":
-        os.chdir("..")
+        os.chdir(os.getenv('HOME'))
+    elif args[1] == '..':
+        os.chdir('..')
     else:
         if os.path.isdir(args[1]):
             os.chdir(f'{args[1]}')
@@ -43,7 +43,7 @@ def exefile(args):
     if os.path.isfile(filename):
         pid = os.fork()
         if pid == 0:
-            os.execvp(args[0], [" "])
+            os.execvp(args[0], [' '])
         else:
             os.waitpid(pid, 0)
     else:
@@ -57,7 +57,7 @@ def export_var(cmds, args):
         for key in env.keys():
             print(f'{key}={env[key]}')
     elif cmds[1].find("=") > 0:
-        words = args[1].split("=")
+        words = args[1].split('=')
         if len(words) == 2:
             os.environ[words[0]] = words[1]
 
@@ -69,7 +69,7 @@ def unset(key):
     elif local_dict[key[1]]:
         local_dict.pop(key[1])
     else:
-        print("ksh : no unset environ")
+        print('ksh : no unset environ')
 
 
 def local_var(cmds):
@@ -86,42 +86,49 @@ def print_set():
         print(f'{dict}={local_dict[dict]}')
 
 
+def extra_cmd(key, args, cmds):
+    cmd = {
+        'cd': lambda: changedir(args),
+        'export': lambda: export_var(cmds, args),
+        'unset': lambda: unset(args),
+        'local': lambda: local_var(cmds),
+        'set': lambda: print_set()
+    }
+    cmd_func = cmd.get(key)
+    if cmd_func is not None:
+        cmd_func()
+        return True
+    else:
+        return False
+
+
 def main():
     print(f'{os.getcwd()}')  # pwd
-    t = input("#> ")
-    if t == "exit":  # 종료
+    t = input('#> ')
+    if t == 'exit':  # 종료
         exit(0)
-    if t == "":
+    if t == '':
         return 0
     cmds = t.split(' ')
     cmd = cmds[0]
-    words = cmd.split("=")
+    words = cmd.split('=')
     args = cmds[0:]
 
     if not args:
-        args = [" "]
+        args = [' ']
     # FIXME: errors...
     for arg in args:
-        if arg[0] == "$":
-            # print(arg)
+        if arg[0] == '$':
             if os.getenv(arg[1:]):
                 args[args.index(arg)] = os.environ[arg[1:]]     # 환경 변수에서 찾기
             elif local_dict.get(arg[1:]):
                 args[args.index(arg)] = local_dict[arg[1:]]
     if len(words) == 2:
         local_dict[words[0]] = words[1]
-    elif cmd == "cd":  # cd
-        changedir(args)
-    elif cmd[:2] == "./":  # shebang
+    elif extra_cmd(cmd, args, cmds):
+        pass
+    elif cmd[:2] == './':  # shebang
         exefile(args)
-    elif cmd == "export":
-        export_var(cmds, args)  # export
-    elif cmd == "unset":
-        unset(args)
-    elif cmd == "local":
-        local_var(cmds)
-    elif cmd == "set":
-        print_set()
     else:
         path = get_env(cmd)
         if path == 0:
@@ -136,12 +143,12 @@ def main():
     print()  # 줄 한칸 뛰기
 
 
-def Exit_gracefully(signal, frame):
-    print("program shutdown")
+def exit_gracefully(signal, frame):
+    print('program shutdown')
     sys.exit(0)
 
 
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, Exit_gracefully)
+if __name__ == '__main__':
+    signal.signal(signal.SIGINT, exit_gracefully)
     while True:
         main()

@@ -3,52 +3,79 @@ import termios
 import sys
 from copy import deepcopy
 
-
-def timeout_mode(new, fd):
-    new[6][termios.VMIN] = 0
-    new[6][termios.VTIME] = 1
-    # read with timeout
-    # why => time out 시 또는 1byte 입력시
-    termios.tcsetattr(fd, termios.TCSADRAIN, new)
-    ch = sys.stdin.read(1)
-
-    if ch == "[":
-        ch = sys.stdin.read(1)
-        if ch == "B":    # down
-            ch = ""
-        elif ch == "C":  # right
-            ch = u"\u001b[1C"
-        elif ch == "A":  # up
-            ch = ""
-        elif ch == "D":  # left
-            ch = u"\u001b[1D"
-    return ch
+write_pos = {'x': 0, 'y': 0}
 
 
-def set_mode():
+def std_write_flush(val):
+    sys.stdout.write(val)
+    sys.stdout.flush()
+
+
+def mode_set(var):
     fd = sys.stdin.fileno()
     new = termios.tcgetattr(fd)
     old = deepcopy(new)
-
     new[3] &= ~termios.ECHO
     # none echo mode
 
     new[3] &= ~termios.ICANON
     # noncannonical mode
 
-    new[6][termios.VMIN] = 1
-    new[6][termios.VTIME] = 0
-    # blocking read
-    # Minbyte 가 입력될때 까지 계속 진행
+    if var == 'timeout':
+        new[6][termios.VMIN] = 0
+        new[6][termios.VTIME] = 1
+        # read with timeout
+        # time out 시 또는 1byte 입력시
+    elif var == 'blocking_read':
+        new[6][termios.VMIN] = 1
+        new[6][termios.VTIME] = 0
+        # blocking read
+        # Minbyte 가 입력될때 까지 계속 진행
+    elif var == 'default':
+        pass
+    return fd, new, old
+
+
+def timeout_mode():
+    fd, new, old = mode_set('timeout')
+    termios.tcsetattr(fd, termios.TCSADRAIN, new)
+    try:
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    return ch
+
+
+def now_pos():
+    fd, new, old = mode_set('default')
+    x, y = '', ''
+    try:
+        termios.tcsetattr(fd, termios.TCSADRAIN, new)
+        std_write_flush(u'\u001b[6n')
+        ch = sys.stdin.read(2)
+        if ch == u'\u001b[':
+            while True:
+                ch = sys.stdin.read(1)
+                if ch == ';':
+                    break
+                y += ch
+            while True:
+                ch = sys.stdin.read(1)
+                if ch == 'R':
+                    break
+                x += ch
+        else:
+            x, y = 0, 0
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    return int(x), int(y)
+
+
+def set_mode():
+    fd, new, old = mode_set('blocking_read')
     try:
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
         ch = sys.stdin.read(1)
-        if ch == '\x1b':
-            ch = timeout_mode(new, fd)
-        if len(ch) == 1:  # ch가 하나일때만
-            if ord(ch) == 127:
-                sys.stdout.write(u'\u001b[1D')
-                sys.stdout.write(u'\u001b[1P')
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
     return ch
@@ -56,15 +83,31 @@ def set_mode():
 
 def get_ch():
     ch = set_mode()
-    sys.stdout.write(ch)
-    sys.stdout.flush()
-    #  it will write everything in the buffer to the terminal,
+    if ch == '\x1b':  # ascii 127
+        ch = timeout_mode()
+        if ch == '[':
+            ch = sys.stdin.read(1)
+            if ch == 'B':    # down
+                ch = ''
+            elif ch == 'C':  # right
+                pos_x, pos_y = now_pos()
+                if pos_x < write_pos['x']:
+                    ch = u'\u001b[1C'
+                else:
+                    ch = ''
+            elif ch == 'A':  # up
+                ch = ''
+            elif ch == 'D':  # left
+                ch = u'\u001b[1D'
+            std_write_flush(ch)
+    elif ch == '\x7f':  # ord(ch) == 127
+        std_write_flush(u'\u001b[1D\u001b[1P')
+        write_pos['x'] = write_pos['x'] - 1
+    else:
+        std_write_flush(ch)
+        write_pos['x'], write_pos['y'] = now_pos()
 
 
 if __name__ == "__main__":
-    while(True):
+    while True:
         get_ch()
-'''
-아스키 스페셜 키 작동 금지
-오른쪽 화살표 작동 금지 시키기
-'''

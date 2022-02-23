@@ -12,16 +12,16 @@ def timeout_mode(new, fd):
     termios.tcsetattr(fd, termios.TCSADRAIN, new)
     ch = sys.stdin.read(1)
 
-    if ch == '[':
+    if ch == "[":
         ch = sys.stdin.read(1)
-        if ch == 'B':    # down
-            ch = ''
-        elif ch == 'C':  # right
-            ch = u'\u001b[1C'
-        elif ch == 'A':  # up
-            ch = ''
-        elif ch == 'D':  # left
-            ch = u'\u001b[1D'
+        if ch == "B":    # down
+            ch = ""
+        elif ch == "C":  # right
+            ch = u"\u001b[1C"
+        elif ch == "A":  # up
+            ch = ""
+        elif ch == "D":  # left
+            ch = u"\u001b[1D"
     return ch
 
 
@@ -43,12 +43,12 @@ def set_mode():
     try:
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
         ch = sys.stdin.read(1)
-        if ch == '\x1b':  # ascii 127
+        if ch == '\x1b':
             ch = timeout_mode(new, fd)
         if len(ch) == 1:  # ch가 하나일때만
-            if ch == b'\x7f':
-                sys.stdout.write(u'\u001b[1D\u001b[1P')
-                sys.stdout.flush()
+            if ord(ch) == 127:
+                sys.stdout.write(u'\u001b[1D')
+                sys.stdout.write(u'\u001b[1P')
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
     return ch
@@ -62,5 +62,9 @@ def get_ch():
 
 
 if __name__ == "__main__":
-    while True:
+    while(True):
         get_ch()
+'''
+아스키 스페셜 키 작동 금지
+오른쪽 화살표 작동 금지 시키기
+'''

@@ -13,7 +13,7 @@
 .  
 ├── README.md  
 ├── bash.py  # ksh 프로그램  
-└── term.py  #  vt 100 cusrer testing
+└── term.py  #  vt 100 cusrer program
 ```
 
 ---
